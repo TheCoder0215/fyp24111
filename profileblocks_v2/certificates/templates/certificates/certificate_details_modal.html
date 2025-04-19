@@ -1,0 +1,47 @@
+<!-- certificates/templates/certificates/certificate_details_modal.html -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <h6>Certificate Information</h6>
+            <table class="table table-sm">
+                <tr>
+                    <th>Type:</th>
+                    <td>{{ cert.get_certificate_type_display }}</td>
+                </tr>
+                <tr>
+                    <th>Date Issued:</th>
+                    <td>{{ cert.created_at }}</td>
+                </tr>
+                <tr>
+                    <th>Certificate Hash:</th>
+                    <td><code>{{ cert.certificate_hash }}</code></td>
+                </tr>
+                <tr>
+                    <th>Signed Hash:</th>
+                    <td><code>{{ cert.signed_hash }}</code></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="col-md-6">
+            <h6>Student Information</h6>
+            <table class="table table-sm">
+                <tr>
+                    <th>Name:</th>
+                    <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
+                </tr>
+                <tr>
+                    <th>Student ID:</th>
+                    <td>{{ cert.student.unique_identifier }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <h6>Certificate Metadata</h6>
+            <pre class="bg-light p-3 rounded"><code>{{ cert.metadata|pprint }}</code></pre>
+        </div>
+    </div>
+</div>

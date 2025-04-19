@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="certificates-container">
+    <h2>My Certificates</h2>
+    
+    {% if certificates %}
+        <div class="certificate-list">
+            {% for cert in certificates %}
+            <div class="certificate-card">
+                <h3>{{ cert.certificate_type }}</h3>
+                <p>Issued by: {{ cert.issuing_institution_user.institution.name }}</p>
+                <p>Date: {{ cert.created_at|date }}</p>
+                <p>Certificate Hash: {{ cert.cert_hash_signed }}</p>
+                <div class="metadata">
+                    <h4>Certificate Details:</h4>
+                    <pre>{{ cert.metadata|json }}</pre>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No certificates found.</p>
+    {% endif %}
+</div>
+{% endblock %}

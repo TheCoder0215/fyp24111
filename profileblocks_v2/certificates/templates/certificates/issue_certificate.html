@@ -1,0 +1,129 @@
+<!-- certificates/templates/certificates/issue_certificate.html-->
+{% extends "base.html" %}
+
+{% block title %}Issue Certificate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Issue New Certificate</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="certificateForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_certificate_type" class="form-label">Certificate Type</label>
+                            <select name="certificate_type" id="id_certificate_type" class="form-select" required>
+                                <option value="">Select certificate type...</option>
+                                {% for type in form.fields.certificate_type.choices %}
+                                    <option value="{{ type.0 }}">{{ type.1 }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.certificate_type.errors %}
+                                <div class="alert alert-danger">
+                                    {{ form.certificate_type.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_awardee_identifier" class="form-label">Student Unique Identifier</label>
+                            <div class="input-group">
+                                <input type="text" name="awardee_identifier" id="id_awardee_identifier" 
+                                       class="form-control" required>
+                                <button type="button" class="btn btn-outline-secondary" id="verify_identifier">
+                                    Verify
+                                </button>
+                            </div>
+                            <div id="identifier_feedback" class="form-text"></div>
+                            {% if form.awardee_identifier.errors %}
+                                <div class="alert alert-danger">
+                                    {{ form.awardee_identifier.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_metadata" class="form-label">Results / Scores / Metadata</label>
+                            <textarea name="metadata" id="id_metadata" class="form-control" 
+                                      rows="5" required placeholder="Enter certificate details in JSON format">
+{
+    "score": "",
+    "rank": "",
+    "additional_info": ""
+}</textarea>
+                            {% if form.metadata.errors %}
+                                <div class="alert alert-danger">
+                                    {{ form.metadata.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Enter certificate details in JSON format. Include scores, ranks, or any other relevant information.
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Issue Certificate</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Add JSON validation for metadata field
+    document.getElementById('certificateForm').addEventListener('submit', function(e) {
+        const metadataField = document.getElementById('id_metadata');
+        try {
+            JSON.parse(metadataField.value);
+        } catch (error) {
+            e.preventDefault();
+            alert('Invalid JSON format in metadata field. Please check your input.');
+        }
+    });
+</script>
+
+<script>
+    document.getElementById('verify_identifier').addEventListener('click', function() {
+        const identifier = document.getElementById('id_awardee_identifier').value.trim();
+        const feedback = document.getElementById('identifier_feedback');
+        
+        fetch('{% url "lookup_student" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `student_id=${encodeURIComponent(identifier)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                feedback.className = 'text-success';
+                feedback.textContent = `Found: ${data.student.name}`;
+            } else {
+                feedback.className = 'text-danger';
+                feedback.textContent = 'Student not found. Please verify the identifier.';
+            }
+        });
+    });
+    </script>
+{% endblock %}
+
+{% endblock %}

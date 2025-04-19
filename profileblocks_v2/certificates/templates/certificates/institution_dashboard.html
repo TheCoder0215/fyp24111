@@ -1,0 +1,26 @@
+<!-- certificates/templates/certificates/institution_dashboard.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2>Welcome, {{ institution.name }}</h2>
+    
+    <div class="actions-container">
+        <h3>Issue New Certificate</h3>
+        <a href="{% url 'issue_certificate' %}" class="btn btn-primary">
+            Issue Certificate
+        </a>
+    </div>
+    
+    <div class="info-container">
+        <h3>Institution Information</h3>
+        <p>Type: {{ institution.get_institution_type_display }}</p>
+        <p>Allowed Certificate Types:</p>
+        <ul>
+            {% for cert_type in certificate_types %}
+            <li>{{ cert_type }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

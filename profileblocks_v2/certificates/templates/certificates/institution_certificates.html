@@ -1,0 +1,204 @@
+<!-- certificates/templates/certificates/institution_certificates.html -->
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Issued Certificates</h2>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Certificate Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for type_code, type_name in certificate_types %}
+                            <option value="{{ type_code }}" 
+                                {% if current_filters.type == type_code %}selected{% endif %}>
+                                {{ type_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from"
+                           value="{{ current_filters.date_from }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to"
+                           value="{{ current_filters.date_to }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           placeholder="Search by student name/ID" 
+                           value="{{ current_filters.search }}">
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'institution_certificates' %}" class="btn btn-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Certificates Table -->
+    <div class="card">
+        <div class="card-body">
+            <table id="certificatesTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date Issued</th>
+                        <th>Certificate Type</th>
+                        <th>Student Name</th>
+                        <th>Student ID</th>
+                        <th>Certificate Hash</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cert in certificates %}
+                    <tr>
+                        <td>{{ cert.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ cert.get_certificate_type_display }}</td>
+                        <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
+                        <td>{{ cert.student.unique_identifier }}</td>
+                        <td>
+                            <code class="small">{{ cert.certificate_hash|truncatechars:16 }}</code>
+                            <button class="btn btn-sm btn-outline-secondary copy-hash" 
+                                    data-hash="{{ cert.certificate_hash }}"
+                                    title="Copy full hash">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <span class="verify-status" data-hash="{{ cert.certificate_hash }}">
+                                Verifying...
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-info view-details"
+                                        data-bs-toggle="modal" data-bs-target="#certDetailsModal"
+                                        data-cert-id="{{ cert.id }}">
+                                    View Details
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary verify-cert"
+                                        data-hash="{{ cert.certificate_hash }}">
+                                    Verify
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Certificate Details Modal -->
+<div class="modal fade" id="certDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Certificate Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    const table = $('#certificatesTable').DataTable({
+        pageLength: 25,
+        order: [[0, 'desc']],
+        dom: 'Bfrtip',
+        buttons: [
+            'copy', 'csv', 'excel', 'pdf'
+        ]
+    });
+
+    // Copy hash button
+    $('.copy-hash').click(function(e) {
+        e.preventDefault();
+        const hash = $(this).data('hash');
+        navigator.clipboard.writeText(hash)
+            .then(() => {
+                // Show temporary success message
+                const btn = $(this);
+                btn.tooltip('hide')
+                   .attr('data-original-title', 'Copied!')
+                   .tooltip('show');
+                setTimeout(() => {
+                    btn.attr('data-original-title', 'Copy full hash');
+                }, 1000);
+            });
+    });
+
+    // View details button
+    $('.view-details').click(function() {
+        const certId = $(this).data('cert-id');
+        const modal = $('#certDetailsModal');
+        
+        // Load certificate details via AJAX
+        $.get(`/certificates/details/${certId}/`, function(data) {
+            modal.find('.modal-body').html(data);
+        });
+    });
+
+    // Verify certificate
+    $('.verify-cert').click(function() {
+        const btn = $(this);
+        const hash = btn.data('hash');
+        const statusSpan = $(`.verify-status[data-hash="${hash}"]`);
+        
+        statusSpan.html('<i class="fas fa-spinner fa-spin"></i> Verifying...');
+        
+        $.post('/certificates/verify/', {
+            certificate_hash: hash,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.verified) {
+                statusSpan.html('<span class="text-success">Verified ✓</span>');
+            } else {
+                statusSpan.html('<span class="text-danger">Invalid ✗</span>');
+            }
+        })
+        .fail(function() {
+            statusSpan.html('<span class="text-danger">Verification failed</span>');
+        });
+    });
+
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

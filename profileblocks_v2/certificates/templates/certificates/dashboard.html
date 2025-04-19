@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    {% if user.user_type == 'institution' %}
+        <h2>Institution Dashboard</h2>
+        <div class="actions-container">
+            <a href="{% url 'issue_certificate' %}" class="btn btn-primary">Issue Certificate</a>
+        </div>
+    {% elif user.user_type == 'student' %}
+        <h2>Student Dashboard</h2>
+        <div class="actions-container">
+            <a href="{% url 'student_certificates' %}" class="btn btn-primary">View My Certificates</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

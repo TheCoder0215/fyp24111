@@ -1,0 +1,29 @@
+<!-- certificates/templates/certificates/student_certificates.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Your Certificates</h2>
+    
+    {% if certificates %}
+        {% for cert in certificates %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="card-title">{{ cert.type }} from {{ cert.institution }}</h5>
+                <h6 class="card-subtitle text-muted">Issued on: {{ cert.date_issued }}</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Certificate Hash:</strong> <code>{{ cert.cert_hash }}</code></p>
+                <p><strong>Signed Hash:</strong> <code>{{ cert.signed_hash }}</code></p>
+                <div class="metadata">
+                    <h6>Certificate Details:</h6>
+                    <pre>{{ cert.metadata|pprint }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No certificates found.</p>
+    {% endif %}
+</div>
+{% endblock %}
