@@ -1,31 +1,64 @@
-<!-- certificates/templates/certificates/confirm_certificate.html -->
 {% extends "base.html" %}
 
+{% block title %}Confirm Certificate Issuance{% endblock %}
+
 {% block content %}
-<div class="confirm-certificate">
-    <h2>Confirm Certificate Details</h2>
-    
-    <div class="certificate-preview">
-        <h3>Certificate Information</h3>
-        <p><strong>Type:</strong> {{ cert_info.type }}</p>
-        <p><strong>Student ID:</strong> {{ cert_info.student_id }}</p>
-        <p><strong>Institution:</strong> {{ cert_info.institution_name }}</p>
-        
-        <h4>Metadata:</h4>
-        <pre>{{ cert_info.metadata|json_script:"metadata" }}</pre>
-        
-        <form method="post" action="{% url 'issue_certificate' %}">
-            {% csrf_token %}
-            <input type="hidden" name="certificate_type" value="{{ cert_info.type }}">
-            <input type="hidden" name="student_identifier" value="{{ cert_info.student_id }}">
-            <input type="hidden" name="metadata" value="{{ cert_info.metadata|json_script:'metadata' }}">
-            <input type="hidden" name="confirmed" value="true">
-            
-            <div class="button-group">
-                <button type="button" class="btn btn-secondary" onclick="history.back()">Back</button>
-                <button type="submit" class="btn btn-primary">Confirm and Issue</button>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-10">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="mb-4 text-center fw-bold">Confirm Certificate Details</h2>
+                    <div class="mb-3 border-bottom pb-2">
+                        <h5 class="mb-2">Certificate Information</h5>
+                        <dl class="row">
+                            <dt class="col-5 text-muted">Type</dt>
+                            <dd class="col-7">{{ cert_info.type }}</dd>
+                            <dt class="col-5 text-muted">Student</dt>
+                            <dd class="col-7">
+                                {{ cert_info.student_name }} 
+                                <span class="badge bg-light text-dark ms-2" style="font-size:0.85em">{{ cert_info.student_id }}</span>
+                            </dd>
+                            <dt class="col-5 text-muted">Institution</dt>
+                            <dd class="col-7">{{ cert_info.institution_name }}</dd>
+                        </dl>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-semibold mb-2">Metadata</h6>
+                        <div class="bg-light p-3 rounded-3 small" style="max-height:300px;overflow:auto;">
+                            <pre id="metadata-json" class="mb-0"></pre>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'issue_certificate' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="certificate_type" value="{{ cert_info.type }}">
+                        <input type="hidden" name="awardee_identifier" value="{{ cert_info.student_id }}">
+                        <textarea name="metadata" id="hidden-metadata" style="display:none"></textarea>
+                        <input type="hidden" name="confirmed" value="true">
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">Back</a>
+                            <button type="submit" class="btn btn-success px-4">Confirm &amp; Issue</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let meta = `{{ cert_info.metadata|escapejs }}`;
+        let pre = document.getElementById("metadata-json");
+        let hidden = document.getElementById("hidden-metadata");
+        try {
+            let obj = JSON.parse(meta);
+            let pretty = JSON.stringify(obj, null, 2);
+            pre.textContent = pretty;
+            hidden.value = pretty;
+        } catch {
+            pre.textContent = meta || "(No metadata)";
+            hidden.value = meta;
+        }
+    });
+</script>
 {% endblock %}

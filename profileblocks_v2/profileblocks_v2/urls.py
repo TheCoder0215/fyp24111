@@ -23,5 +23,6 @@ urlpatterns = [
     path('institutions/', include('institutions.urls')),
     path('certificates/', include('certificates.urls')),
     path('blockchain/', include('blockchain.urls')),
-    path('verification/', include('verification.urls')),
+    path('', include('verification.urls')),
+    path('certificate-profiles/', include('profiles.urls')),
 ]

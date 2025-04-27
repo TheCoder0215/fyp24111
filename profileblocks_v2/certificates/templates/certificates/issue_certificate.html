@@ -56,21 +56,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="id_metadata" class="form-label">Results / Scores / Metadata</label>
-                            <textarea name="metadata" id="id_metadata" class="form-control" 
-                                      rows="5" required placeholder="Enter certificate details in JSON format">
-{
-    "score": "",
-    "rank": "",
-    "additional_info": ""
-}</textarea>
-                            {% if form.metadata.errors %}
-                                <div class="alert alert-danger">
-                                    {{ form.metadata.errors }}
-                                </div>
-                            {% endif %}
+                            <label class="form-label">Results / Scores / Metadata</label>
+                            <div id="metadata-entries">
+                                <!-- dynamically generated entries -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-entry-btn">
+                                <i class="fas fa-plus"></i> Add Entry
+                            </button>
+                            <!-- hidden textarea -->
+                            <textarea name="metadata" id="id_metadata" class="form-control d-none" required></textarea>
                             <small class="form-text text-muted">
-                                Enter certificate details in JSON format. Include scores, ranks, or any other relevant information.
+                                Enter certificate details as key-value pairs (e.g. score, rank, additional info). Data will be submitted in JSON format.
                             </small>
                         </div>
 
@@ -98,6 +94,98 @@
         }
     });
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 默认字段
+        let defaultEntries = [
+            {key: "score", value: ""},
+            {key: "rank", value: ""},
+            {key: "additional_info", value: ""}
+        ];
+        let metadataEntries = [];
+    
+        // 初始化metadata输入区域
+        function renderMetadataEntries() {
+            const container = document.getElementById('metadata-entries');
+            container.innerHTML = '';
+            metadataEntries.forEach((entry, idx) => {
+                const row = document.createElement('div');
+                row.className = "row mb-2 align-items-center";
+                row.innerHTML = `
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="Key" value="${entry.key}" data-idx="${idx}" data-type="key">
+                    </div>
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="Value" value="${entry.value}" data-idx="${idx}" data-type="value">
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-entry-btn" data-idx="${idx}" title="Remove">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+            // 绑定事件
+            container.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const idx = this.getAttribute('data-idx');
+                    const type = this.getAttribute('data-type');
+                    metadataEntries[idx][type] = this.value;
+                    updateMetadataTextarea();
+                });
+            });
+            container.querySelectorAll('.remove-entry-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.getAttribute('data-idx'));
+                    metadataEntries.splice(idx, 1);
+                    renderMetadataEntries();
+                    updateMetadataTextarea();
+                });
+            });
+            updateMetadataTextarea();
+        }
+    
+        document.getElementById('add-entry-btn').addEventListener('click', function() {
+            metadataEntries.push({key: "", value: ""});
+            renderMetadataEntries();
+        });
+    
+        function updateMetadataTextarea() {
+            let obj = {};
+            for (const entry of metadataEntries) {
+                if (entry.key.trim() !== "")
+                    obj[entry.key.trim()] = entry.value;
+            }
+            document.getElementById('id_metadata').value = JSON.stringify(obj, null, 2);
+        }
+    
+        document.getElementById('certificateForm').addEventListener('submit', function(e) {
+            updateMetadataTextarea();
+            try {
+                JSON.parse(document.getElementById('id_metadata').value);
+            } catch (error) {
+                e.preventDefault();
+                alert('Invalid metadata: Please check for empty keys or invalid values.');
+            }
+        });
+    
+        let initialJson = "";
+        try {
+            initialJson = document.getElementById('id_metadata').value;
+            if (initialJson) {
+                let initialObj = JSON.parse(initialJson);
+                metadataEntries = Object.entries(initialObj).map(pair => ({key: pair[0], value: pair[1]}));
+            } else {
+                metadataEntries = [...defaultEntries];
+            }
+        } catch {
+            metadataEntries = [...defaultEntries];
+        }
+        renderMetadataEntries();
+    });
+    </script>
 
 <script>
     document.getElementById('verify_identifier').addEventListener('click', function() {

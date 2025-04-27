@@ -1,29 +1,35 @@
-<!-- certificates/templates/certificates/student_certificates.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container">
-    <h2>Your Certificates</h2>
-    
-    {% if certificates %}
-        {% for cert in certificates %}
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="card-title">{{ cert.type }} from {{ cert.institution }}</h5>
-                <h6 class="card-subtitle text-muted">Issued on: {{ cert.date_issued }}</h6>
-            </div>
-            <div class="card-body">
-                <p><strong>Certificate Hash:</strong> <code>{{ cert.cert_hash }}</code></p>
-                <p><strong>Signed Hash:</strong> <code>{{ cert.signed_hash }}</code></p>
-                <div class="metadata">
-                    <h6>Certificate Details:</h6>
-                    <pre>{{ cert.metadata|pprint }}</pre>
+    <h2>My Certificates</h2>
+    <div class="mb-3">
+        {% if certificates %}
+            <form id="profile-form">
+                <div class="list-group mb-3">
+                    {% for cert in certificates %}
+                        <label class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>{{ cert.get_certificate_type_display }}</strong>
+                                <br>
+                                <small>
+                                    {{ cert.created_at|date:"Y-m-d H:i" }}<br>
+                                    Issued by: {{ cert.issuing_institution.full_name }}
+                                </small>
+                            </span>
+                            <span>
+                                <input type="checkbox" name="profile_certs" value="{{ cert.pk }}">
+                                <a href="{% url 'student_certificate_detail' cert.certificate_hash %}" class="btn btn-sm btn-outline-info ms-2">
+                                    View
+                                </a>
+                            </span>
+                        </label>
+                    {% endfor %}
                 </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>No certificates found.</p>
-    {% endif %}
+            </form>
+        {% else %}
+            <p>You have no certificates yet.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

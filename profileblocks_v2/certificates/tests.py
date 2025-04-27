@@ -1,6 +1,6 @@
 # certificates/tests.py
 from django.test import TestCase
-from blockchain.web3_utils import check_connection
+from blockchain.services.web3_utils import check_connection
 
 class BlockchainConnectionTest(TestCase):
     def test_web3_connection(self):

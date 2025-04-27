@@ -1,26 +1,70 @@
-<!-- certificates/templates/certificates/institution_dashboard.html -->
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-container">
-    <h2>Welcome, {{ institution.name }}</h2>
-    
-    <div class="actions-container">
-        <h3>Issue New Certificate</h3>
-        <a href="{% url 'issue_certificate' %}" class="btn btn-primary">
-            Issue Certificate
-        </a>
-    </div>
-    
-    <div class="info-container">
-        <h3>Institution Information</h3>
-        <p>Type: {{ institution.get_institution_type_display }}</p>
-        <p>Allowed Certificate Types:</p>
-        <ul>
-            {% for cert_type in certificate_types %}
-            <li>{{ cert_type }}</li>
-            {% endfor %}
-        </ul>
+<div class="container py-4">
+    <h2 class="mb-4 text-primary">
+        <i class="fas fa-university me-2"></i>
+        Welcome, {{ institution.name }}
+    </h2>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h4 class="mb-3 text-secondary"><i class="fas fa-sitemap me-2"></i>Institution Hierarchy</h4>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Hierarchy</dt>
+                        <dd class="col-sm-8 fw-semibold">
+                            {% for level in institution.hierarchy_list %}
+                                {{ level }}{% if not forloop.last %} <span class="text-secondary">&raquo;</span> {% endif %}
+                            {% endfor %}
+                        </dd>
+                        <dt class="col-sm-4 text-muted">Type</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info text-dark fs-6">
+                                {{ institution.institution_type.get_name_display|default:institution.institution_type }}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h4 class="mb-3 text-secondary"><i class="fas fa-cogs me-2"></i>Institution Actions</h4>
+                    <a href="{% url 'issue_certificate' %}" class="btn btn-primary mb-3 w-100">
+                        <i class="fas fa-certificate me-2"></i> Issue New Certificate
+                    </a>
+                    <a href="{% url 'institution_certificates' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-history me-2"></i> View Issued Certificates
+                    </a>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="mb-3 text-secondary"><i class="fas fa-info-circle me-2"></i>Institution Info</h4>
+                    <p><strong>Type:</strong>
+                        <span class="badge bg-info text-dark fs-6">
+                            {{ institution.institution_type.get_name_display|default:institution.institution_type }}
+                        </span>
+                    </p>
+                    <p><strong>Allowed Certificate Types:</strong></p>
+                    <div>
+                        {% for cert_type in certificate_types %}
+                            {% if cert_type == 'certificate' %}
+                                <span class="badge bg-success me-1 mb-1"><i class="fas fa-certificate me-1"></i> Certificate</span>
+                            {% elif cert_type == 'academic_results' %}
+                                <span class="badge bg-warning text-dark me-1 mb-1"><i class="fas fa-chart-bar me-1"></i> Academic Results</span>
+                            {% elif cert_type == 'awards' %}
+                                <span class="badge bg-primary me-1 mb-1"><i class="fas fa-trophy me-1"></i> Awards</span>
+                            {% else %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ cert_type }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-{% endblock %}
+{% endblock %} 

@@ -1,0 +1,172 @@
+{% extends "verification/base.html" %}
+{% block title %}Certificate Verification | ProfileBlocks{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-8 col-lg-7">
+        <div class="card p-4 shadow rounded-4">
+            <h2 class="mb-3 fw-bold text-primary">
+                <i class="fas fa-search me-1"></i>Verify Certificate
+            </h2>
+            <form class="mb-3" method="get" autocomplete="off">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="hash" id="hash-input"
+                           placeholder="Enter certificate hash..." value="{{ cert_hash }}" minlength="16" required>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Verify
+                    </button>
+                </div>
+            </form>
+            {% if cert %}
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="fas fa-certificate fa-lg me-2"></i>
+                <div>
+                    Certificate found.
+                </div>
+            </div>
+            <div class="mb-3">
+                <table class="table table-bordered align-middle mb-0">
+                    <tr>
+                        <th style="width:140px;">Type</th>
+                        <td>{{ cert.get_certificate_type_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date Issued</th>
+                        <td>{{ cert.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Certificate Hash</th>
+                        <td><code>{{ cert.certificate_hash }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Issuing Institution</th>
+                        <td>
+                            {{ cert.issuing_institution.root_full_name }}<br>
+                            <small class="text-muted">{{ cert.issuing_institution.full_name }}</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Student Name</th>
+                        <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="mb-3">
+                <button id="db-signature-btn" class="btn btn-outline-primary me-2" type="button"
+                        data-hash="{{ cert.certificate_hash }}">
+                    <i class="fas fa-key"></i> DB + Signature Verify
+                </button>
+                <span id="db-signature-status" class="align-middle"></span>
+                <br class="d-md-none">
+                <button id="full-verify-btn" class="btn btn-outline-success mt-2 mt-md-0" type="button"
+                        data-hash="{{ cert.certificate_hash }}">
+                    <i class="fas fa-link"></i> Full Verification (Chain)
+                </button>
+                <span id="full-verification-status" class="align-middle"></span>
+            </div>
+            <div class="accordion my-2" id="metadataAccordion">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    View Certificate Metadata
+                  </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#metadataAccordion">
+                  <div class="accordion-body">
+                    <pre class="mb-0" style="white-space:pre-wrap;word-break:break-all;font-size:1em;">{{ cert.metadata|pprint }}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% elif cert_hash %}
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-times-circle me-2"></i>
+                No certificate found for this hash.
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Enter a certificate hash to verify its authenticity.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showStatus(elem, status, message) {
+    elem.innerHTML = '';
+    let badge = document.createElement('span');
+    badge.className = 'badge rounded-pill px-3 py-2';
+    if(status === 'success') {
+        badge.classList.add('bg-success', 'text-white');
+        badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + message;
+    } else if(status === 'fail') {
+        badge.classList.add('bg-danger', 'text-white');
+        badge.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + message;
+    } else if(status === 'warn') {
+        badge.classList.add('bg-warning', 'text-dark');
+        badge.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>' + message;
+    } else {
+        badge.classList.add('bg-secondary', 'text-white');
+        badge.innerHTML = message;
+    }
+    elem.appendChild(badge);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const dbSignatureBtn = document.getElementById('db-signature-btn');
+    const dbSignatureStatus = document.getElementById('db-signature-status');
+    const fullVerifyBtn = document.getElementById('full-verify-btn');
+    const fullVerifyStatus = document.getElementById('full-verification-status');
+
+    if (dbSignatureBtn) {
+        dbSignatureBtn.addEventListener('click', function() {
+            showStatus(dbSignatureStatus, 'default', 'Verifying...');
+            fetch("{% url 'public_db_signature_verify' %}", {
+                method: 'POST',
+                body: new URLSearchParams({certificate_hash: dbSignatureBtn.dataset.hash}),
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.db && data.signature) {
+                    showStatus(dbSignatureStatus, 'success', 'DB + Signature Verified');
+                } else if (!data.db) {
+                    showStatus(dbSignatureStatus, 'fail', 'Not in DB');
+                } else {
+                    showStatus(dbSignatureStatus, 'fail', 'Signature Invalid');
+                }
+            })
+            .catch(() => showStatus(dbSignatureStatus, 'fail', 'Verification Failed'));
+        });
+    }
+
+    if (fullVerifyBtn) {
+        fullVerifyBtn.addEventListener('click', function() {
+            showStatus(fullVerifyStatus, 'default', 'Verifying...');
+            fetch("{% url 'public_full_verification' %}", {
+                method: 'POST',
+                body: new URLSearchParams({certificate_hash: fullVerifyBtn.dataset.hash}),
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.db && data.signature && data.on_chain) {
+                    showStatus(fullVerifyStatus, 'success', 'Fully Verified (On Chain)');
+                } else if (!data.db) {
+                    showStatus(fullVerifyStatus, 'fail', 'Not in DB');
+                } else if (!data.signature) {
+                    showStatus(fullVerifyStatus, 'fail', 'Signature Invalid');
+                } else if (!data.on_chain) {
+                    showStatus(fullVerifyStatus, 'warn', 'Not Found On Chain');
+                }
+            })
+            .catch(() => showStatus(fullVerifyStatus, 'fail', 'Verification Failed'));
+        });
+    }
+});
+</script>
+{% endblock %}

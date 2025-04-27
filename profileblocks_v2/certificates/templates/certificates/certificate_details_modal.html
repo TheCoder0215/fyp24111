@@ -1,47 +1,140 @@
-<!-- certificates/templates/certificates/certificate_details_modal.html -->
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-6">
-            <h6>Certificate Information</h6>
-            <table class="table table-sm">
-                <tr>
-                    <th>Type:</th>
-                    <td>{{ cert.get_certificate_type_display }}</td>
-                </tr>
-                <tr>
-                    <th>Date Issued:</th>
-                    <td>{{ cert.created_at }}</td>
-                </tr>
-                <tr>
-                    <th>Certificate Hash:</th>
-                    <td><code>{{ cert.certificate_hash }}</code></td>
-                </tr>
-                <tr>
-                    <th>Signed Hash:</th>
-                    <td><code>{{ cert.signed_hash }}</code></td>
-                </tr>
-            </table>
-        </div>
-        
-        <div class="col-md-6">
-            <h6>Student Information</h6>
-            <table class="table table-sm">
-                <tr>
-                    <th>Name:</th>
-                    <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
-                </tr>
-                <tr>
-                    <th>Student ID:</th>
-                    <td>{{ cert.student.unique_identifier }}</td>
-                </tr>
-            </table>
-        </div>
-    </div>
+<style>
+    .modal-dialog {
+        max-width: 600px;
+        width: 95vw;
+    }
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .cert-detail-table {
+        width: 100%;
+    }
+    .cert-detail-table th {
+        text-align: left;
+        width: 160px;
+        vertical-align: top;
+        font-weight: 600;
+        padding-top: .6em;
+    }
+    .cert-detail-table td {
+        word-break: break-all;
+        padding-top: .6em;
+    }
+    code {
+        color: #e83e8c;
+        font-size: 0.95em;
+        word-break: break-all;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+    .copy-btn {
+        margin-left: 8px;
+        font-size: 0.95em;
+        padding: 2px 8px;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+    .meta-pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 0.95em;
+        margin: 0;
+    }
+</style>
 
-    <div class="row mt-3">
-        <div class="col-12">
-            <h6>Certificate Metadata</h6>
-            <pre class="bg-light p-3 rounded"><code>{{ cert.metadata|pprint }}</code></pre>
-        </div>
-    </div>
+<div class="container-fluid px-1 py-2">
+    <table class="cert-detail-table">
+        <tr>
+            <th>Type:</th>
+            <td>{{ cert.get_certificate_type_display }}</td>
+        </tr>
+        <tr>
+            <th>Date Issued:</th>
+            <td>{{ cert.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        <tr>
+            <th>Certificate Hash:</th>
+            <td>
+                <code>{{ cert.certificate_hash }}</code>
+            </td>
+        </tr>
+        <tr>
+            <th>Signed Hash:</th>
+            <td>
+                <code id="signed-hash-short">
+                    {{ cert.signed_hash|slice:":64" }}{% if cert.signed_hash|length > 64 %}...{% endif %}
+                </code>
+                <button class="btn btn-outline-secondary btn-sm copy-btn"
+                        id="copy-signed-hash"
+                        type="button"
+                        data-bs-toggle="tooltip"
+                        title="Copy full signed hash"
+                        data-full-hash="{{ cert.signed_hash }}">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </td>
+        </tr>
+        <tr>
+            <th>Institution:</th>
+            <td>{{ cert.issuing_institution.root_full_name }}</td>
+        </tr>
+        <tr>
+            <th>Hierarchy:</th>
+            <td>
+                {{ cert.issuing_institution.full_name }}
+                <small style="display:block">
+                    ID: {{ cert.issuing_institution.unique_identifier }}
+                </small>
+            </td>
+        </tr>
+        <tr>
+            <th>Issuing User:</th>
+            <td>
+                {% if cert.issuing_user %}
+                    {{ cert.issuing_user.full_name }} ({{ cert.issuing_user.user.username }})
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Name:</th>
+            <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
+        </tr>
+        <tr>
+            <th>Student ID:</th>
+            <td>{{ cert.student.unique_identifier }}</td>
+        </tr>
+        <tr>
+            <th>Certificate Metadata:</th>
+            <td>
+                <pre class="meta-pre">{{ cert.metadata|pprint }}</pre>
+            </td>
+        </tr>
+    </table>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var btn = document.getElementById('copy-signed-hash');
+    if (btn) {
+        btn.addEventListener('click', function () {
+            var fullHash = btn.getAttribute('data-full-hash');
+            navigator.clipboard.writeText(fullHash).then(function () {
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(function () {
+                    btn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 1200);
+            });
+        });
+    }
+    if (window.bootstrap) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    }
+});
+</script>

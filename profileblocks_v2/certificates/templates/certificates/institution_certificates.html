@@ -1,67 +1,125 @@
-<!-- certificates/templates/certificates/institution_certificates.html -->
 {% extends "base.html" %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+<style>
+/* Card and Table Modernization */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 32px 0 rgba(60,72,100,0.08);
+    background: #fff;
+}
+
+/* Responsive Table */
+.table-responsive {
+    margin: 0;
+    border-radius: 1rem;
+    overflow: auto;
+}
+
+/* Sticky Table Header */
+#certificatesTable th {
+    background: #f8f9fb !important;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 2px solid #e7eaf3 !important;
+}
+
+/* Hash styling */
+.code-hash {
+    font-family: monospace;
+    color: #d6336c;
+    background: #f8d7da;
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 0.95em;
+}
+
+/* Buttons */
+.btn-modern {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.btn-modern.btn-info {
+    background: linear-gradient(90deg, #3db2ff 0%, #005bea 100%);
+    color: #fff;
+    border: none;
+}
+
+.btn-modern.btn-info:hover {
+    background: linear-gradient(90deg, #3686d3 0%, #0048b4 100%);
+}
+
+/* Copy Button */
+.btn-copy {
+    background: #f1f3f4;
+    border: none;
+    padding: 2px 6px;
+    margin-left: 4px;
+    border-radius: 5px;
+    color: #333;
+}
+
+.btn-copy:hover {
+    background: #e2e6ea;
+}
+
+/* Status Badges */
+.badge-status {
+    font-size: 0.90em;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-weight: 600;
+}
+.badge-db {
+    background: #14c06a;
+    color: #fff;
+}
+.badge-db-fail {
+    background: #ff7272;
+}
+.badge-chain {
+    background: #007bff;
+    color: #fff;
+}
+.badge-chain-fail {
+    background: #ffb700;
+    color: #212529;
+}
+.badge-grey {
+    background: #e0e5ef;
+    color: #5e6e82;
+}
+
+/* Table Row Hover */
+#certificatesTable tbody tr:hover {
+    background: #f4f7fb;
+}
+
+@media (max-width: 900px) {
+    .card { margin: 0; }
+    .table-responsive { border-radius: 0.7rem; }
+    #certificatesTable th, #certificatesTable td {
+        white-space: nowrap;
+    }
+}
+
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>Issued Certificates</h2>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="type" class="form-label">Certificate Type</label>
-                    <select name="type" id="type" class="form-select">
-                        <option value="">All Types</option>
-                        {% for type_code, type_name in certificate_types %}
-                            <option value="{{ type_code }}" 
-                                {% if current_filters.type == type_code %}selected{% endif %}>
-                                {{ type_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="date_from" class="form-label">Date From</label>
-                    <input type="date" class="form-control" id="date_from" name="date_from"
-                           value="{{ current_filters.date_from }}">
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="date_to" class="form-label">Date To</label>
-                    <input type="date" class="form-control" id="date_to" name="date_to"
-                           value="{{ current_filters.date_to }}">
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="search" class="form-label">Search</label>
-                    <input type="text" class="form-control" id="search" name="search"
-                           placeholder="Search by student name/ID" 
-                           value="{{ current_filters.search }}">
-                </div>
-                
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <a href="{% url 'institution_certificates' %}" class="btn btn-secondary">Clear Filters</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Certificates Table -->
-    <div class="card">
-        <div class="card-body">
-            <table id="certificatesTable" class="table table-striped">
+<!-- Ensure CSRF token is available for AJAX -->
+<form style="display:none;">{% csrf_token %}</form>
+<div class="container-fluid py-3">
+    <div class="card p-3">
+        <h4 class="mb-3 fw-bold">Issued Certificates</h4>
+        <div class="table-responsive">
+            <table id="certificatesTable" class="table align-middle table-hover">
                 <thead>
                     <tr>
                         <th>Date Issued</th>
@@ -70,19 +128,21 @@
                         <th>Student ID</th>
                         <th>Certificate Hash</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th style="min-width:210px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cert in certificates %}
                     <tr>
                         <td>{{ cert.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ cert.get_certificate_type_display }}</td>
+                        <td class="fw-semibold">{{ cert.get_certificate_type_display }}</td>
                         <td>{{ cert.student.firstname }} {{ cert.student.lastname }}</td>
-                        <td>{{ cert.student.unique_identifier }}</td>
                         <td>
-                            <code class="small">{{ cert.certificate_hash|truncatechars:16 }}</code>
-                            <button class="btn btn-sm btn-outline-secondary copy-hash" 
+                            <span class="badge badge-grey">{{ cert.student.unique_identifier }}</span>
+                        </td>
+                        <td>
+                            <span class="code-hash">{{ cert.certificate_hash|truncatechars:16 }}</span>
+                            <button class="btn btn-copy btn-sm copy-hash" 
                                     data-hash="{{ cert.certificate_hash }}"
                                     title="Copy full hash">
                                 <i class="fas fa-copy"></i>
@@ -90,21 +150,31 @@
                         </td>
                         <td>
                             <span class="verify-status" data-hash="{{ cert.certificate_hash }}">
-                                Verifying...
+                                <span class="badge badge-status badge-grey">Checking DB...</span>
                             </span>
                         </td>
                         <td>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-info view-details"
-                                        data-bs-toggle="modal" data-bs-target="#certDetailsModal"
-                                        data-cert-id="{{ cert.id }}">
-                                    View Details
-                                </button>
-                                <button type="button" class="btn btn-sm btn-primary verify-cert"
-                                        data-hash="{{ cert.certificate_hash }}">
-                                    Verify
-                                </button>
-                            </div>
+                            <button class="btn btn-outline-success btn-sm db-signature-verify"
+                                    data-hash="{{ cert.certificate_hash }}" type="button">
+                                DB + Public Key Verify
+                            </button>
+                            <span class="db-signature-status" data-hash="{{ cert.certificate_hash }}">
+                                <!-- Status will be filled by JS -->
+                            </span>
+                            <br>
+                            <button class="btn btn-outline-primary btn-sm full-verify"
+                                    data-hash="{{ cert.certificate_hash }}" type="button">
+                                Full Verification (Chain)
+                            </button>
+                            <span class="full-verification-status" data-hash="{{ cert.certificate_hash }}">
+                                <!-- Status will be filled by JS -->
+                            </span>
+                            <br>
+                            <button type="button" class="btn btn-modern btn-info view-details mt-2"
+                                    data-bs-toggle="modal" data-bs-target="#certDetailsModal"
+                                    data-cert-hash="{{ cert.certificate_hash }}">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -116,13 +186,13 @@
 
 <!-- Certificate Details Modal -->
 <div class="modal fade" id="certDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Certificate Details</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Certificate Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body py-4">
                 <!-- Content will be loaded dynamically -->
             </div>
         </div>
@@ -131,74 +201,164 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    const table = $('#certificatesTable').DataTable({
-        pageLength: 25,
+    // Responsive DataTable
+    $('#certificatesTable').DataTable({
+        pageLength: 10,
         order: [[0, 'desc']],
         dom: 'Bfrtip',
-        buttons: [
-            'copy', 'csv', 'excel', 'pdf'
-        ]
+        buttons: ['copy', 'csv', 'excel', 'pdf'],
+        scrollX: true,
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search certificates..."
+        }
     });
 
     // Copy hash button
-    $('.copy-hash').click(function(e) {
+    $(document).on('click', '.copy-hash', function(e) {
         e.preventDefault();
         const hash = $(this).data('hash');
         navigator.clipboard.writeText(hash)
             .then(() => {
-                // Show temporary success message
-                const btn = $(this);
-                btn.tooltip('hide')
-                   .attr('data-original-title', 'Copied!')
-                   .tooltip('show');
+                $(this).attr('title', 'Copied!').tooltip('show');
                 setTimeout(() => {
-                    btn.attr('data-original-title', 'Copy full hash');
-                }, 1000);
+                    $(this).attr('title', 'Copy full hash');
+                }, 1200);
             });
     });
 
     // View details button
-    $('.view-details').click(function() {
-        const certId = $(this).data('cert-id');
+    $(document).on('click', '.view-details', function() {
+        const certHash = $(this).data('cert-hash');
         const modal = $('#certDetailsModal');
-        
-        // Load certificate details via AJAX
-        $.get(`/certificates/details/${certId}/`, function(data) {
+        modal.find('.modal-body').html('<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+        $.get(`/certificates/details/${certHash}/`, function(data) {
             modal.find('.modal-body').html(data);
         });
     });
 
-    // Verify certificate
-    $('.verify-cert').click(function() {
-        const btn = $(this);
-        const hash = btn.data('hash');
-        const statusSpan = $(`.verify-status[data-hash="${hash}"]`);
-        
-        statusSpan.html('<i class="fas fa-spinner fa-spin"></i> Verifying...');
-        
-        $.post('/certificates/verify/', {
+    // --- Auto DB + Signature Verification on page load ---
+    $('.db-signature-status').each(function() {
+        const statusSpan = $(this);
+        const hash = statusSpan.data('hash');
+        statusSpan.html('<span class="badge badge-status badge-chain"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>');
+        $.post('/certificates/db-signature-verify/', {
             certificate_hash: hash,
             csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
         })
         .done(function(data) {
-            if (data.verified) {
-                statusSpan.html('<span class="text-success">Verified ✓</span>');
+            if (data.db && data.signature) {
+                statusSpan.html('<span class="badge badge-status badge-db">DB + Signature Verified</span>');
+            } else if (!data.db) {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Not in DB</span>');
             } else {
-                statusSpan.html('<span class="text-danger">Invalid ✗</span>');
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Signature Invalid</span>');
             }
         })
         .fail(function() {
-            statusSpan.html('<span class="text-danger">Verification failed</span>');
+            statusSpan.html('<span class="badge badge-status badge-chain-fail">Verification Failed</span>');
         });
     });
 
-    // Initialize tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
+    // --- Manual DB + Signature Verification ---
+    $('.db-signature-verify').click(function() {
+        const btn = $(this);
+        const hash = btn.data('hash');
+        const statusSpan = $(`.db-signature-status[data-hash="${hash}"]`);
+        statusSpan.html('<span class="badge badge-status badge-chain"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>');
+        $.post('/certificates/db-signature-verify/', {
+            certificate_hash: hash,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.db && data.signature) {
+                statusSpan.html('<span class="badge badge-status badge-db">DB + Signature Verified</span>');
+            } else if (!data.db) {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Not in DB</span>');
+            } else {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Signature Invalid</span>');
+            }
+        })
+        .fail(function() {
+            statusSpan.html('<span class="badge badge-status badge-chain-fail">Verification Failed</span>');
+        });
+    });
+
+    // --- Manual Full Verification (Chain) ---
+    $('.full-verify').click(function() {
+        const btn = $(this);
+        const hash = btn.data('hash');
+        const statusSpan = $(`.full-verification-status[data-hash="${hash}"]`);
+        statusSpan.html('<span class="badge badge-status badge-chain"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>');
+        $.post('/certificates/full-verify/', {
+            certificate_hash: hash,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.db && data.signature && data.on_chain) {
+                statusSpan.html('<span class="badge badge-status badge-db">Fully Verified (On Chain)</span>');
+            } else if (!data.db) {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Not in DB</span>');
+            } else if (!data.signature) {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Signature Invalid</span>');
+            } else if (!data.on_chain) {
+                statusSpan.html('<span class="badge badge-status badge-chain-fail">Not Found On Chain</span>');
+            }
+        })
+        .fail(function() {
+            statusSpan.html('<span class="badge badge-status badge-chain-fail">Verification Failed</span>');
+        });
+    });
+
+    // --- Auto DB Verification (legacy, for the DB Verified column) ---
+    $('.verify-status').each(function() {
+        const statusSpan = $(this);
+        const hash = statusSpan.data('hash');
+        $.post('/certificates/db-verify/', {
+            certificate_hash: hash,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.db_verified) {
+                statusSpan.html('<span class="badge badge-status badge-db">DB Verified</span>');
+            } else {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Not found in DB</span>');
+            }
+        })
+        .fail(function() {
+            statusSpan.html('<span class="badge badge-status badge-chain-fail">DB Check Failed</span>');
+        });
+    });
+
+    // Chain Verification (legacy, for the Chain Verified column) ---
+    $('.chain-verify-cert').click(function() {
+        const btn = $(this);
+        const hash = btn.data('hash');
+        const statusSpan = $(`.chain-status[data-hash="${hash}"]`);
+        statusSpan.html('<span class="badge badge-status badge-chain"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>');
+        $.post('/certificates/chain-verify/', {
+            certificate_hash: hash,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.chain_verified) {
+                statusSpan.html('<span class="badge badge-status badge-db">Chain Verified</span>');
+            } else {
+                statusSpan.html('<span class="badge badge-status badge-db-fail">Not Found on Chain</span>');
+            }
+        })
+        .fail(function() {
+            statusSpan.html('<span class="badge badge-status badge-chain-fail">Chain Verify Failed</span>');
+        });
+    });
+
+    // Bootstrap Tooltips
+    $('[title]').tooltip({trigger:'hover'});
 });
 </script>
 {% endblock %}

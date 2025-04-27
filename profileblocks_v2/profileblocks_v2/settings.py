@@ -13,94 +13,26 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+# ProfileBlocks Custom Settings
+HOST_URL = "127.0.0.1:8000"
+USE_BLOCKCHAIN = True
 WEB3_PROVIDER_URL = os.getenv('WEB3_PROVIDER_URL')
 CHAIN_ID = int(os.getenv('CHAIN_ID', 11155111))
-CERTIFICATE_REGISTRY_ADDRESS = os.getenv('CERTIFICATE_REGISTRY_ADDRESS')
-CERTIFICATE_REGISTRY_ABI = [
-    {
-        "anonymous": False,
-        "inputs": [
-            {
-                "indexed": True,
-                "internalType": "bytes32",
-                "name": "certificateHash",
-                "type": "bytes32"
-            },
-            {
-                "indexed": True,
-                "internalType": "address",
-                "name": "institution",
-                "type": "address"
-            }
-        ],
-        "name": "CertificateAdded",
-        "type": "event"
-    },
-    {
-        "anonymous": False,
-        "inputs": [
-            {
-                "indexed": True,
-                "internalType": "address",
-                "name": "institution",
-                "type": "address"
-            }
-        ],
-        "name": "InstitutionAuthorized",
-        "type": "event"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "certificateHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "addCertificate",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "institution",
-                "type": "address"
-            }
-        ],
-        "name": "authorizeInstitution",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "certificateHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "verifyCertificate",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-]
+CONTRACT_ADDRESS = os.getenv('CONTRACT_ADDRESS')
+CONTRACT_OWNER_ADDRESS = os.getenv('CONTRACT_OWNER_ADDRESS')
+CONTRACT_OWNER_PRIVATE_KEY = os.getenv('CONTRACT_OWNER_PRIVATE_KEY')
+ABI_PATH = Path(__file__).resolve().parent.parent.parent / "smart_contracts//artifacts//contracts//CertificateRegistry.sol//CertificateRegistry.json"
+with open(ABI_PATH) as f:
+    ARTIFACT = json.load(f)
+    CONTRACT_ABI = ARTIFACT["abi"]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -128,6 +60,7 @@ INSTALLED_APPS = [
     'certificates.apps.CertificatesConfig',
     'institutions.apps.InstitutionsConfig',
     'verification.apps.VerificationConfig',
+    'profiles.apps.ProfilesConfig',
 ]
 
 MIDDLEWARE = [
