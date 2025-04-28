@@ -124,7 +124,7 @@ profileblocks_v2/
 ├─ certificates/          # Certificate issuance, management, templates, and templatetags
 ├─ institutions/          # Institution models and services
 ├─ profiles/              # Student profile management, services, templates
-├─ static/                # Static files (CSS, JS)
+├─ static/                # Static files (JS)
 ├─ verification/          # Verification portal templates and tests
 ├─ manage.py              # Django management script
 .env                      # Environment variables file (sensitive)
