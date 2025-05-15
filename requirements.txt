@@ -15,6 +15,7 @@ cryptography==44.0.2
 cytoolz==1.0.1
 Django==5.2
 djangorestframework==3.16.0
+dotenv
 eth-account==0.13.6
 eth-hash==0.7.1
 eth-keyfile==0.8.1
@@ -36,7 +37,6 @@ pydantic==2.11.3
 pydantic_core==2.33.1
 python-dotenv==1.1.0
 pyunormalize==16.0.0
-pywin32==310
 qrcode==8.1
 regex==2024.11.6
 requests==2.32.3
