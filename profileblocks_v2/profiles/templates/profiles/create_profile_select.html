@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="mb-4 text-primary"><i class="fas fa-layer-group me-2"></i>Select Certificates for Profile</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="list-group mb-3">
+                            {% for cert in certificates %}
+                            <label class="list-group-item d-flex align-items-center gap-3">
+                                <input type="checkbox" name="cert_ids" value="{{ cert.id }}" class="form-check-input mt-0" style="width:1.2em;height:1.2em;">
+                                <div>
+                                    <strong>{{ cert.get_certificate_type_display }}</strong>
+                                    <small class="text-muted ms-2">{{ cert.created_at|date:"Y-m-d H:i" }}</small>
+                                    <div class="text-secondary small">
+                                        <i class="fas fa-university me-1"></i>Issued by: {{ cert.issuing_institution.full_name }}
+                                    </div>
+                                </div>
+                            </label>
+                            {% empty %}
+                            <div class="text-muted">You have no certificates yet.</div>
+                            {% endfor %}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="{% url 'certificate_profiles' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                Next <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

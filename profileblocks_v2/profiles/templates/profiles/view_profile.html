@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="mb-2 text-primary"><i class="fas fa-layer-group me-2"></i>Profile: {{ profile.name }}</h2>
+                    <p class="mb-1 text-secondary">{{ profile.description }}</p>
+                    <p class="mb-1"><strong>Created at:</strong> {{ profile.created_at }}</p>
+                    <h5 class="mt-4">Certificates:</h5>
+                    <ul class="list-group mb-3">
+                        {% for cert in profile.certificates.all %}
+                        <li class="list-group-item">
+                            <strong>{{ cert.get_certificate_type_display }}</strong>
+                            <br>
+                            <span class="text-secondary small">({{ cert.certificate_hash }})</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div>
+                        <strong>Signed Profile Hash:</strong>
+                        <code class="text-danger">{{ profile.signed_profile_hash }}</code>
+                    </div>
+                    <a href="{% url 'export_profile_share' profile.id %}" class="btn btn-info mt-3">
+                        <i class="fas fa-share-alt me-1"></i>Share/Export Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

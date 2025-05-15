@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-4 text-center">
+                    <h2 class="mb-3 text-primary">
+                        <i class="fas fa-qrcode me-2"></i>Share Profile Link
+                    </h2>
+                    <p class="mb-2">Anyone with this link can verify your certificate profile:</p>
+                    <div class="mb-3">
+                        <a href="{{ share_url }}" class="fw-bold" target="_blank">{{ share_url }}</a>
+                    </div>
+                    <div class="mb-3">
+                        <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" class="img-fluid" style="max-width: 220px;">
+                        <div class="small text-muted mt-2">Scan to verify this profile</div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'view_profile' profile.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Profile
+                        </a>
+                        <button class="btn btn-info" id="copy-link-btn">
+                            <i class="fas fa-copy me-1"></i>Copy Link
+                        </button>
+                    </div>
+                    <div id="copy-success" class="text-success mt-3" style="display: none;">
+                        Link copied!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('copy-link-btn').onclick = function() {
+    const link = "{{ share_url }}";
+    navigator.clipboard.writeText(link).then(function() {
+        document.getElementById('copy-success').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('copy-success').style.display = 'none';
+        }, 2000);
+    });
+};
+</script>
+{% endblock %}

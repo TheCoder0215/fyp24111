@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h2 class="text-danger mb-3"><i class="fas fa-trash-alt me-2"></i>Delete Profile</h2>
+                    <div class="alert alert-warning mb-3">
+                        Are you sure you want to delete the following profile?
+                    </div>
+                    <h4 class="mb-1">{{ profile.name }}</h4>
+                    <p class="mb-2 text-secondary">{{ profile.description }}</p>
+                    <small class="d-block mb-2">Created at: {{ profile.created_at }}</small>
+                    <h6>Certificates in this Profile:</h6>
+                    <ul>
+                        {% for cert in profile.certificates.all %}
+                        <li>
+                            <strong>{{ cert.get_certificate_type_display }}</strong>
+                            <span class="small text-muted">({{ cert.certificate_hash }})</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'certificate_profiles' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="fas fa-trash"></i> Yes, delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
